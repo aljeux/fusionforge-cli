@@ -1,0 +1,9 @@
+[2006-02-15] Marcelo Mottalli	<marcelo@gforgegroup.com>
+	* Fixed bug which created ~/.gforgerc file with wrong permissions
+
+[2005-10-11] Marcelo Mottalli	<marcelo@gforgegroup.com>
+	* Added formatting for indexed arrays
+	* Added parameter "host" to login function
+
+[2005-10-10] Marcelo Mottalli	<marcelo@gforgegroup.com>
+	* CLI now formats the output in columns instead of ugly print_r

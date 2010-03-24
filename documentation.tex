@@ -1,0 +1,873 @@
+% $Id: documentation.tex,v 1.3 2005-08-31 17:27:26 marcelo Exp $
+\documentclass[a4]{article}
+
+%% PREAMBLE
+
+\usepackage{verbatim}
+\usepackage{listings}
+
+%% PAGE FORMATTING
+\setlength{\hoffset}{-1.0in}
+\setlength{\textwidth}{17cm}
+\setlength{\headsep}{0cm}
+\setlength{\textheight}{25cm}
+\setlength{\voffset}{-0.7in}
+%\setlength{\headwidth}{\textwidth}
+\setlength{\headheight}{13.1pt}
+
+%% CONSOLE STYLE
+\lstdefinelanguage{console}{
+}
+
+\lstnewenvironment{console}[0]{\lstset{
+basicstyle=\small,
+tabsize=2,
+frame=single,
+language=console,
+columns=flexible,
+extendedchars=true,
+numbers=none,
+breaklines=true,
+breakatwhitespace=true
+}}{}
+
+
+%% MISC ENVIRONMENTS AND FUNCTIONS
+\newenvironment{functionlist}{
+\begin{description}
+}{
+\end{description}
+}
+\newcommand{\function}[1]{\item[#1:] }
+
+\newenvironment{parameterlist}{
+\begin{itemize}
+    }{
+\end{itemize}
+}
+\newcommand{\parameter}[1]{\item \emph{#1}:}
+
+\newcommand{\projectparameter}{\parameter{$--$project} UNIX name of the project. If none is specified, the project specified when you logged in will
+be used. If none was specified at that time, an error will be displayed.}
+
+
+\begin{document}
+\title{GForge Command-line interface (CLI) documentation}
+\author{}
+\date{}
+\maketitle
+
+\section{Installation}
+
+In order to install GForge's commandline interface (CLI), you must have PHP
+installed in your local machine. The latest PHP4 version is highly recommended.
+Also, PHP must be compiled \emph{without} the $--$disable-cli parameter in order to create the
+PHP binaries.
+
+You must check in which directory you have your PHP binary installed. The directory
+is the prefix that was specified when compiling PHP (if no prefix was defined, it
+defaults to /usr, so the PHP binary is located in /usr/bin/php). You can check in which
+directory it is installed by issuing the following command:
+
+\begin{console}
+# which php
+/usr/bin/php
+\end{console}
+
+In this case, the PHP binary is \verb|/usr/bin/php|.
+
+\textbf{NOTE:} If you intend using the CLI for administering a GForge installation via an
+HTTPS connection, you must compile PHP with the CURL extension (using the $--$with-curl
+option in the \verb|configure| script).
+
+Once you have PHP properly installed, you must download and uncompress the CLI
+to a directory in your local machine.
+
+Once you've uncompressed the CLI, you must edit \verb|$PREFIX/gforge.php| (where
+\verb|$PREFIX| is the directory in which the CLI was uncompressed) using your favorite
+editor and change the following:
+\begin{enumerate}
+    \item Change the first line which says \\
+    \verb|#!/usr/bin/php -q| \\
+    to make it point to the path of the PHP binary in your machine (if it is different
+    from \verb|/usr/bin/php|)
+    \item Find the Configuration section in the script (marked between comments) and
+    change the following constants:
+    \begin{itemize}
+        \item \verb|NUSOAP_DIR|: Points to the installation directory of the NuSOAP PHP
+        Library. A copy of the library is located in \verb|$PREFIX/nusoap/lib/|.
+        \item \verb|GFORGE_CLI_DIR|: Points to the directory where the CLI auxiliary files
+        are to be found. It usually is \verb|$PREFIX/include/|.
+        \item \verb|WSDL_URL| (optional): URL of the WSDL of your GForge's SOAP server.
+        It is probably located in http://(your\_gforge\_server)/soap/index.php?wsdl.
+        You can see if the URL is correct by entering it in your browser, you should
+        get an XML file from the server as the result. If this variable isn't set, the CLI
+        will try to use the WSDL specified in the \verb|GFORGE_WSDL| environment variable.
+    \end{itemize}
+    \item Make sure the gforge.php script has execution permissions. If not, set the
+    permission by issuing the following command:\\
+    \verb|chmod +x $PREFIX/gforge.php|
+\end{enumerate}
+
+After everything is properly set up, you must test the installation works correctly. For
+this, try logging into the server by issuing a ''login'' command. For this, change your
+current working directory to the directory in which you uncompressed the CLI and execute
+the following:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php -v login --username=(your user) --password=(your password)
+GForgeSOAP::Connecting to the server http://gforge/soap/index.php?wsdl...
+GForgeSOAP::Connected!
+GForgeSOAP::Executing command login...
+Logged in as user (your user), using session string MTAyLSotMTEyMzA4Mjg5My0qLTEyNy4wLjAuMS0qLU51U09BUC8wLjYuOSAoMS4xLjEuMSk=-*-824c9f9010931f7872f4b9826c460ed3
+Logged in.
+\end{console}
+
+The message you see may vary depending on the configuration of your server.
+
+If you get an error like \textit{''Fatal error: wsdl error: HTTP ERROR: Couldn't open socket connection to server http://(your server) prior to connect().''},
+it means that your computer can't connect to the GForge server. In this case, you
+must make sure the address is written correctly and that you can access the server from your computer.
+
+\section{Usage}
+The basic form for invoking the CLI is the following: \\
+\verb|# ./gforge.php [program options] [module name] [function name] [function parameters]|
+
+\begin{itemize}
+    \item \textbf{Program options:}
+    \begin{parameterlist}
+\parameter{-v} Verbose. Give a detailed output of what's going on.
+\parameter{-h} Help. Display help on how to use the program.
+\end{parameterlist}
+\item \textbf{Module name:} A ''module'' is a grouping of functions that act over a specific part of the GForge
+system. Currently, the following modules are available:
+\begin{itemize}
+    \item (none): If the module is empty, system-wide functions are accesible (i.e., login to the server)
+    \item \verb|frs|: File Release System module
+    \item \verb|project|: Module that deals with project administration
+    \item \verb|task|: Task management module
+    \item \verb|tracker|: Tracker management module
+\end{itemize}
+\item \textbf{Function name:} The name of the function to invoke depends on the module being called. For details, see
+section \ref{parametros}.
+\item \textbf{Function parameters:} The parameters also depend on the function being called. See section \ref{parametros}.
+\end{itemize}
+
+\section{Module functions and parameters}\label{parametros}
+
+\subsection{System wide functions}
+These functions do not act over a specific module. They are the following:
+\begin{functionlist}
+\function{login}
+Log in to the server
+\begin{parameterlist}
+\parameter{$--$username*\footnote{An asterisk (*) means that the parameter is required}} Specifies the name of the
+user you'll be working with. The username is the one you usually use in the GForge login page.
+\parameter{$--$password} Specifies the password to login with. If none is provided, you will be asked for one
+interactively.
+\parameter{$--$project} UNIX name of the project you plan working on. If you don't specify this, any future function
+call will require you to specify the project in which the function will be applied.
+\end{parameterlist}
+
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php login --username=joe --password=sixpack --project=myproject
+Logged in.
+
+(OR)
+
+[marcelo@linux gforge_cli]$ ./gforge.php login --username=walrus --project=myproject
+Password: *******
+Logged in.
+\end{console}
+
+\function{logout} End a session. This removes all the information of the session from your computer.
+
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php logout
+Session terminated.
+\end{console}
+\end{functionlist}
+
+\subsection{FRS (File Release System)}
+\begin{functionlist}
+\function{packages}
+Retrieve a list of the available FRS packages for a project.
+\begin{parameterlist}
+\projectparameter
+\end{parameterlist}
+
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs packages
+Array
+(
+    [0] => Array
+        (
+            [package_id] => 4
+            [name] => myproject
+            [status_id] => 1
+            [is_public] => 1
+        )
+
+    [1] => Array
+        (
+            [package_id] => 8
+            [name] => package from the CLI
+            [status_id] => 1
+            [is_public] => 1
+        )
+
+    [2] => Array
+        (
+            [package_id] => 9
+            [name] => package from the CLI 2
+            [status_id] => 1
+            [is_public] => 0
+        )
+)
+\end{console}
+
+\function{addpackage}
+Adds a new package to the FRS.
+\begin{parameterlist}
+\parameter{$--$name*} Name of the new package.
+\parameter{$--$public} Whether the package should be public or not (''y'' or ''n'', default=''y'')
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs addpackage --name="New package added from the CLI" --public=n
+11
+\end{console}
+In this case, ''11'' (the value outputted) is the ID of the new package.
+
+\function{releases}
+Show the releases of a particular package
+\begin{parameterlist}
+\parameter{$--$package*} ID of the package
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs releases --package=4
+Array
+(
+    [0] => Array
+        (
+            [release_id] => 5
+            [name] => release #1
+            [notes] => this are the release notes
+            [changes] => this is the change log
+            [status_id] => 1
+            [release_date] => 1119884760
+        )
+
+    [1] => Array
+        (
+            [release_id] => 6
+            [name] => Release #2
+            [notes] => release notes for package #2
+            [changes] => change log for package #2
+            [status_id] => 1
+            [release_date] => 1119966660
+        )
+)
+\end{console}
+
+\function{addrelease}
+Add a release to a package
+\begin{parameterlist}
+\parameter{$--$name*} Name of the new release
+\parameter{$--$package*} ID of the package the release will be created in
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs addrelease --package=11 --name="Release 0.9.1"
+12
+\end{console}
+
+\function{files}
+List the files that are available in a particular release
+\begin{parameterlist}
+\parameter{$--$package*} ID of the package the release belongs to
+\parameter{$--$release*} ID of the release
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs files --package=4 --release=7
+Array
+(
+    [0] => Array
+        (
+            [file_id] => 9
+            [name] => somefile.tex
+            [size] =>
+            [type] => Other
+            [processor] => Other
+            [downloads] => 1
+            [release] => 1120149267
+            [date] =>
+        )
+)
+\end{console}
+
+\function{addfile}
+Add a file to a release
+\begin{parameterlist}
+\parameter{$--$package*} ID of the package the release belongs to
+\parameter{$--$release*} ID of the release
+\parameter{$--$file*} File to add
+\parameter{$--$type} Type ID of the file. The available types are listed on the \verb|frs_filetype| table 
+in the GForge database.
+\parameter{$--$processor} Processor ID for this file. The available processors are listed on the \verb|frs_processor| table
+in the GForge database.
+\parameter{$--$date} Release date. The date must be in format YYYY-MM-DD.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs addfile --package=11 --release=12 --file=/home/marcelo/somediff.diff --type=5900 --processor=8000 --date=2005-08-03
+16
+\end{console}
+
+\function{getfile}
+Retrieve a file from the project
+\begin{parameterlist}
+\parameter{$--$package*} ID of the package the release belongs to
+\parameter{$--$release*} ID of the release
+\parameter{$--$id*} ID of the file to download
+\parameter{$--$output} Name of the file to write the downloaded file to. If none is specified, the file is outputted
+to the screen
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php frs getfile --package=11 --release=12 --id=16 --output=/home/marcelo/tmp.diff
+File retrieved successfully.
+\end{console}
+
+\end{functionlist}
+
+\subsection{Project management}
+\begin{functionlist}
+\function{list}
+Display the list of public projects.\\
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php project list
+Array
+(
+    [0] => svntest
+    [1] => template
+    [2] => phpexplorer
+)
+\end{console}
+
+\function{mylist}
+Display the list of projects assigned to the user you're logged in with.\\
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php project mylist
+Array
+(
+    [0] => Array
+        (
+            [group_id] => 7
+            [group_name] => svntest
+            [homepage] => svntest.gforge
+            [is_public] => 1
+            [status] => A
+            [unix_group_name] => svntest
+            [short_description] => We will use this project to test the SVN plugin and stuff.
+            [scm_box] => gforge
+            [register_time] => 1117735073
+        )
+
+    [1] => Array
+        (
+            [group_id] => 5
+            [group_name] => PHP Explorer
+            [homepage] => phpexplorer.gforge
+            [is_public] => 1
+            [status] => A
+            [unix_group_name] => phpexplorer
+            [short_description] => This tool allows you to browse the server's files
+            [scm_box] => phpexplorer.gforge
+            [register_time] => 1113835609
+        )
+)
+
+\end{console}
+
+\end{functionlist}
+
+\subsection{Task management}
+\begin{functionlist}
+\function{groups}
+List the task groups in a project
+\begin{parameterlist}
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php task groups
+Array
+(
+    [0] => Array
+        (
+            [group_project_id] => 8
+            [group_id] => 5
+            [name] => To Do
+            [description] => Things We Have To Do
+            [is_public] => 1
+            [send_all_posts_to] =>
+        )
+
+    [1] => Array
+        (
+            [group_project_id] => 9
+            [group_id] => 5
+            [name] => Next Release
+            [description] => Items For Our Next Release
+            [is_public] => 0
+            [send_all_posts_to] =>
+        )
+)
+\end{console}
+
+\function{list}
+List the tasks in a particular group.
+\begin{parameterlist}
+\parameter{$--$group*} ID of the task group
+\parameter{$--$assigned\_to} User ID. Specify this if you want to see all the tasks assigned to a certain user.
+\parameter{$--$category} Category ID.
+\parameter{$--$status} Status (''open'' or ''closed''). If ommited, it returns all the tasks.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php task list --group=9 --assigned_to=102 --category=100 --status=open
+Array
+(
+    [0] => Array
+        (
+            [project_task_id] => 14
+            [group_project_id] => 9
+            [summary] => New item
+            [details] => This is the description
+            [percent_complete] => 30
+            [priority] => 3
+            [hours] => 10
+            [start_date] => 1119545944
+            [end_date] => 1120150744
+            [status_id] => 1
+            [category_id] => 100
+            [dependent_on] => Array
+                (
+                    [0] => 6
+                )
+
+            [assigned_to] => Array
+                (
+                    [0] => 102
+                )
+
+        )
+)
+\end{console}
+
+\function{categories}
+List the available categories for the tasks belonging to a specific group.
+\begin{parameterlist}
+\parameter{$--$group*} ID of the group.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php task categories --group=9
+Array
+(
+    [0] => Array
+        (
+            [category_id] => 101
+            [category_name] => Category 1
+        )
+
+    [1] => Array
+        (
+            [category_id] => 102
+            [category_name] => Category 2
+        )
+
+    [2] => Array
+        (
+            [category_id] => 103
+            [category_name] => Category 3
+        )
+)
+\end{console}
+
+\function{add}
+Add a new task.
+\begin{parameterlist}
+\parameter{$--$group*} ID of the task group.
+\parameter{$--$summary*} Summary for the task.
+\parameter{$--$details*} Details for the task.
+\parameter{$--$priority} Priority (1: lowest priority, 5: highest priority). If none is specified, it defaults to 3.
+\parameter{$--$hours} Amount of hours assigned to this task.
+\parameter{$--$start\_date} Start date for the task. If none is specified, it defaults to today.
+\parameter{$--$end\_date} End date for the task. If none is specified, it defaults to a week after the start date.
+\parameter{$--$category} Category ID of the task.
+\parameter{$--$percent} Percent completed for this task (default: 0).
+\parameter{$--$assigned\_to} List of comma-separated user IDs this task is assigned to.
+\parameter{$--$dependent\_on} List of comma-separated task IDs this task depends on.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php task add --group=8 --summary="Optimize the SQL commands" --details="There are some slow queries that need to be optimized" --priority=4 --hours=15 --start_date=2005-08-27 --end_date=2005-09-02 --category=105 --percent=10 --assigned_to=102,103 --dependent_on=17
+Confirm you want to add a new tracker with the following information:
+Project: PHP Explorer
+Group: To Do
+Summary: Optimize the SQL commands
+Priority: 4
+Estimated hours: 15
+Start date: 2005-08-27
+End date: 2005-09-02
+Category: Category 2
+% complete: 10%
+Assigned to: Joe Sixpack (joesix), John Smith (jsmith)
+Dependent on: Update database driver
+Details:
+There are some slow queries that need to be optimized
+Is this information correct? (y/n): y
+18
+\end{console}
+
+\function{update}
+Update the information of a task.
+\begin{parameterlist}
+\parameter{$--$group*} The group the task belongs to.
+\parameter{$--$id*} ID of the task to be modified.
+\parameter{$--$summary} Summary.
+\parameter{$--$details} Details.
+\parameter{$--$priority} Priority (1: lowest priority, 5: highest priority)
+\parameter{$--$hours} Amount of hours.
+\parameter{$--$start\_date} Start date.
+\parameter{$--$end\_date} End date.
+\parameter{$--$category} Category ID.
+\parameter{$--$percent} Percent complete.
+\parameter{$--$status} Status (''open'' or ''closed'')
+\parameter{$--$assigned\_to} Comma-separated list of user IDs the task is assigned to. Note that the old list gets overwritten if a 
+new list is specified.
+\parameter{$--$dependent\_on} Comma-separated list of task IDs the task depends on. Note that the old list gets overwritten if a 
+new list is specified.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php task update --group=8 --id=18 --percent=100 --status=closed
+Confirm you want to update the task with the following information:
+Project: PHP Explorer
+Group: To Do
+Task summary: Optimize the SQL commands
+> Percent complete: 100%
+> Status: Closed
+Is this information correct? (y/n): y
+18
+\end{console}
+
+
+\end{functionlist}
+
+\subsection{Tracker management}
+
+\begin{functionlist}
+\function{typelist}
+Display a list of the trackers for the project.
+\begin{parameterlist}
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker typelist --group=gforge
+Array
+(
+    [0] => Array
+        (
+            [group_artifact_id] => 113
+            [group_id] => 5
+            [name] => Bugs
+            [description] => Bug Tracking System
+            [is_public] => 1
+            [allow_anon] => 0
+            [due_period] => 2592000
+            [datatype] => 1
+            [status_timeout] => 1209600
+            [extra_fields] => Array
+(...list of trackers and fields...)
+\end{console}
+
+\function{list}
+Display a list of artifacts that belong to a specified tracker.
+\begin{parameterlist}
+\parameter{$--$type*} ID of the tracker.
+\parameter{$--$assigned\_to} Show only the artifacts assigned to this user ID.
+\parameter{$--$status} Show only the artifacts with this status ID.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker list --type=113 --status=0 --assigned_to=102
+Array
+(
+    [0] => Array
+        (
+            [artifact_id] => 5
+            [group_artifact_id] => 113
+            [status_id] => 2
+            [priority] => 3
+            [submitted_by] => 102
+            [assigned_to] => 102
+            [open_date] => 1115311786
+            [close_date] => 1125064392
+            [summary] => New bug
+            [details] => small bug
+            [extra_fields] => Array
+                (
+                    [0] => Array
+                        (
+                            [extra_field_id] => 128
+                            [field_data] => 40
+                        )
+
+                    [1] => Array
+                        (
+                            [extra_field_id] => 129
+                            [field_data] => 41
+                        )
+
+                    [2] => Array
+                        (
+                            [extra_field_id] => 130
+                            [field_data] => 42
+                        )
+
+                )
+
+        )
+
+)
+\end{console}
+
+\function{add}
+Add a new artifact to a tracker
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID the new artifact will belong to.
+\parameter{$--$priority} Priority of the artifact (1: lowest, 5: highest). If not specified, defaults
+to 3.
+\parameter{$--$assigned\_to} Comma-separated list of user IDs this artifact will be assigned to.
+\parameter{$--$summary} Summary for the artifact.
+\parameter{$--$details} Details for the artifact.
+\parameter{$--$[extra\_field\_name]} Extra field value. \verb|extra_field_name| must be replaced by the
+	\emph{alias} of the extra field. The value of the extra field depends on its type.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker add --type=116 --priority=4 --assigned_to=102 --summary="Back button is not working" --details="When I read my email and I press the back button, a blank page appears" --version=52
+Confirm you want to add a new tracker with the following information:
+Project: PHP Explorer
+Tracker type: Feature Requests
+Priority: 4
+Assigned to: Marcelo Mottalli (walrus)
+Summary: Back button is not working
+Details:
+When I read my email and I press the back button, a blank page appears
+Is this information correct? (y/n): y
+26
+\end{console}
+\emph{\textbf{Note}}: In this example, ''version'' corresponds to an extra field and 52
+	is a valid value ID for this extra field. The value returned (26) is the ID of the new artifact.
+
+\function{update}
+Update an artifact information
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID the new artifact will belong to.
+\parameter{$--$id*} ID of the artifact to update.
+\parameter{$--$priority} Priority of the artifact (1: lowest, 5: highest). If not specified, defaults
+to 3.
+\parameter{$--$assigned\_to} Comma-separated list of user IDs this artifact will be assigned to.
+\parameter{$--$status} New status of the artifact (1: open, 2: closed)
+\parameter{$--$summary} Summary for the artifact.
+\parameter{$--$details} Details for the artifact.
+\parameter{$--$[extra\_field\_name]} Extra field value. \verb|extra_field_name| must be replaced by the
+	\emph{alias} of the extra field. The value of the extra field depends on its type.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker update --type=116 --id=26 --priority=5 --extra_field_notice_textfield="Increased priority"
+Confirm you want to update the tracker with the following information:
+Project: PHP Explorer
+Tracker type: Feature Requests
+Summary: Back button is not working
+> Priority: 5
+Is this information correct? (y/n): y
+26
+\end{console}
+
+\function{messages}
+Retrieve all the messages posted in an artifact.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID.
+\parameter{$--$id*} Artifact ID.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker messages --type=116 --id=3
+Array
+(
+    [0] => Array
+        (
+            [id] => 22
+            [artifact_id] => 3
+            [body] => we will keep them gray
+            [adddate] => 1117810766
+            [user_id] => 102
+        )
+
+    [1] => Array
+        (
+            [id] => 21
+            [artifact_id] => 3
+            [body] => maybe we can add a gradient
+            [adddate] => 1117809234
+            [user_id] => 102
+        )
+
+    [2] => Array
+        (
+            [id] => 20
+            [artifact_id] => 3
+            [body] => i think most buttons should be green
+            [adddate] => 1117723406
+            [user_id] => 102
+        )
+
+)
+\end{console}
+
+\function{addmessage}
+Post a new message in an artifact.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID the artifact belongs to.
+\parameter{$--$id*} Artifact ID.
+\parameter{$--$message*} Message to post.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker addmessage --type=116 --id=3 --message="I agree with you"
+47
+\end{console}
+\emph{\textbf{Note}}: The value returned (47) is the ID of the new message.
+
+\function{files}
+Show a list of files attached to the artifact.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID.
+\parameter{$--$id*} Artifact ID.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker files --type=116 --id=3
+Array
+(
+    [0] => Array
+        (
+            [id] => 11
+            [artifact_id] => 3
+            [name] => screenshot.jpg
+            [description] => 11
+            [filesize] => 364983
+            [filetype] => image/jpeg
+            [adddate] => 1124372802
+            [submitted_by] => 102
+        )
+
+)
+\end{console}
+
+\function{getfile}
+Download a file from an artifact.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID.
+\parameter{$--$id*} Artifact ID.
+\parameter{$--$file\_id*} ID of the file to download.
+\parameter{$--$output} File name to save the file as. If not specified, the contents of the file are
+outputted to the screen.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker getfile --type=116 --id=3 --file_id=11 --output=/home/marcelo/screenshot.jpg
+File retrieved successfully.
+\end{console}
+
+\function{addfile}
+Attach a file to an artifact.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID.
+\parameter{$--$id*} Artifact ID.
+\parameter{$--$file*} Local file to attach.
+\parameter{$--$description} Description of the file.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker addfile --type=116 --id=3 --file=/home/marcelo/image_patch.diff --description="This is the patch to apply"
+12
+\end{console}
+\emph{\textbf{Note}}: The value returned (12) is the ID of the new file.
+
+\function{tecnhicians}
+Get a list of technicians assigned to a tracker.
+\begin{parameterlist}
+\parameter{$--$type*} Tracker ID.
+\projectparameter
+\end{parameterlist}
+Example:
+\begin{console}
+[marcelo@linux gforge_cli]$ ./gforge.php tracker technicians --type=116
+Array
+(
+    [0] => Array
+        (
+            [user_id] => 102
+            [user_name] => walrus
+            [title] => Mr
+            [firstname] => Marcelo
+            [lastname] => Mottalli
+            [address] =>
+            [address2] =>
+            [phone] =>
+            [fax] =>
+            [status] => A
+            [timezone] => US/Alaska
+            [country_code] =>
+            [add_date] => 1113835347
+            [language_id] => 1
+        )
+
+)
+\end{console}
+
+\end{functionlist}
+
+\end{document}

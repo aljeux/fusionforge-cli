@@ -62,7 +62,7 @@ if (version_compare(phpversion(),'5.3','<')) {
 }
 
 if (function_exists('date_default_timezone_set') && function_exists('date_default_timezone_get'))
-	date_default_timezone_set(date_default_timezone_get());
+	@date_default_timezone_set(@date_default_timezone_get());
 
 /* Include common files */
 require_once(NUSOAP_DIR."nusoap.php");		// Main NuSOAP library
@@ -78,6 +78,9 @@ if (version_compare(phpversion(),'4.3.0','<') || !defined('STDIN')) {
 	define('STDERR',fopen("php://stderr","r"));
 	register_shutdown_function( create_function( '' , 'fclose(STDIN); fclose(STDOUT); fclose(STDERR); return true;' ) );
 }
+
+// Disable memory_limit for CLI scripts.
+ini_set("memory_limit", -1);
 
 // Global logging object
 $LOG = new Log();
@@ -162,10 +165,12 @@ gforge [options] [module name] [function] [parameters]
     -v              Verbose
 
 Available modules:
-   * tracker
-   * project
-   * task
    * document
+   * frs
+   * project
+   * scm
+   * task
+   * tracker
    
 Available functions for the default module:
    * login: Begin a session with the server.
